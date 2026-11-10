@@ -10,11 +10,27 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
-      - name: Keep workflows active
+        with:
+          persist-credentials: true
+      - name: Create keepalive branch and push
+        env:
+          BRANCH: keepalive-${{ github.run_id }}
         run: |
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
+          git checkout -b "$BRANCH"
           git commit --allow-empty -m "chore: keepalive [skip ci]"
-          git push
+          git push origin "$BRANCH"
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: keepalive [skip ci]"
+          branch: keepalive-${{ github.run_id }}
+          delete-branch: true
+          title: "chore: keepalive - maintain repository activity"
+          body: "Automated keepalive commit to maintain repository activity and prevent workflow disablement."
+          labels: "automation"
